@@ -1,0 +1,35 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Orders{% endblock %}
+{% block admin %}
+<div class="admin-head"><h1>Orders</h1></div>
+<nav class="chips" aria-label="Filter by status">
+  <a href="{{ url_for('admin.orders', q=q or None) }}" class="{{ 'on' if not status }}">All</a>
+  {% for s in ['Pending Payment','Placed','Shipped','Delivered','Cancelled'] %}
+    <a href="{{ url_for('admin.orders', status=s, q=q or None) }}" class="{{ 'on' if status == s }}">{{ s }} <span class="count">{{ counts.get(s, 0) }}</span></a>
+  {% endfor %}
+</nav>
+<form method="get" class="toolbar">
+  {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+  <label class="sr" for="oq">Search orders</label>
+  <input id="oq" name="q" type="search" placeholder="Order number, customer name or email" value="{{ q }}">
+  <button class="btn btn-ghost" type="submit">Search</button>
+</form>
+<div class="panel flush">
+<table class="table">
+  <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th class="num">Items</th><th>Payment</th><th>Status</th><th class="num">Total</th></tr></thead>
+  <tbody>
+  {% for o in pagination.items %}
+    <tr><td><a href="{{ url_for('admin.order_detail', order_id=o.order_id) }}"><b>{{ o.number }}</b></a></td>
+      <td>{{ o.user.name }}<br><span class="muted small">{{ o.user.email }}</span></td>
+      <td>{{ o.order_date.strftime('%d %b %Y, %H:%M') }}</td>
+      <td class="num">{{ o.item_count }}</td>
+      <td>{{ o.payment_method }}<br><span class="muted small">{{ o.payment.status if o.payment else '' }}</span></td>
+      <td>{{ m.status(o.status) }}</td>
+      <td class="num">{{ o.total_amount|money }}</td></tr>
+  {% else %}<tr><td colspan="7" class="muted">No orders match.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{{ m.pager(pagination) }}
+{% endblock %}

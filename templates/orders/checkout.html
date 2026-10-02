@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Checkout</h1>
+  <form method="post" class="checkout-layout">
+    {{ m.csrf() }}
+    <div>
+      <div class="panel form">
+        <h2>Delivery address</h2>
+        <div class="two">
+          <div><label for="ship_name">Receiver's name</label>
+            <input id="ship_name" name="ship_name" required value="{{ form.get('ship_name','') }}" autocomplete="name"></div>
+          <div><label for="ship_phone">Mobile number</label>
+            <input id="ship_phone" name="ship_phone" required inputmode="numeric" pattern="[6-9][0-9]{9}" maxlength="10" value="{{ form.get('ship_phone','') }}" autocomplete="tel"></div>
+        </div>
+        <label for="ship_address">House no., building, street, area</label>
+        <textarea id="ship_address" name="ship_address" rows="2" required autocomplete="street-address">{{ form.get('ship_address','') }}</textarea>
+        <div class="two">
+          <div><label for="ship_city">City</label>
+            <input id="ship_city" name="ship_city" required value="{{ form.get('ship_city','') }}" autocomplete="address-level2"></div>
+          <div><label for="ship_pincode">PIN code</label>
+            <input id="ship_pincode" name="ship_pincode" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" value="{{ form.get('ship_pincode','') }}" autocomplete="postal-code"></div>
+        </div>
+      </div>
+
+      <div class="panel form">
+        <h2>Payment method</h2>
+        <label class="pay-option">
+          <input type="radio" name="payment_method" value="online" {{ 'checked' if form.get('payment_method','online') == 'online' }}>
+          <span><b>Pay online</b><small>UPI, debit/credit card or netbanking via {{ 'Razorpay' if config.RAZORPAY_KEY_ID else 'the demo gateway' }}</small></span>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="payment_method" value="cod" {{ 'checked' if form.get('payment_method') == 'cod' }}>
+          <span><b>Cash on delivery</b><small>Pay when the order reaches you</small></span>
+        </label>
+      </div>
+    </div>
+
+    <aside class="panel summary">
+      <h2>{{ items|length }} item{{ '' if items|length == 1 else 's' }}</h2>
+      <ul class="mini-lines">
+        {% for i in items %}<li><span>{{ i.quantity }} × {{ i.product.name }}</span><span>{{ i.line_total|money }}</span></li>{% endfor %}
+      </ul>
+      <dl>
+        <dt>Subtotal</dt><dd>{{ subtotal|money }}</dd>
+        <dt>Delivery</dt><dd>{{ 'Free' if shipping == 0 else shipping|money }}</dd>
+        <dt class="total">To pay</dt><dd class="total">{{ total|money }}</dd>
+      </dl>
+      <button class="btn btn-primary btn-block" type="submit">Place order</button>
+      <a class="btn btn-ghost btn-block" href="{{ url_for('cart.view_cart') }}">Back to cart</a>
+    </aside>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Your cart{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Your cart</h1>
+  {% if items %}
+  <div class="checkout-layout">
+    <div class="line-items">
+      {% for i in items %}
+      <div class="line">
+        <a href="{{ url_for('products.product_detail', product_id=i.product_id) }}">{{ m.tile(i.product, 'tile-sm') }}</a>
+        <div class="line-main">
+          <a class="line-name" href="{{ url_for('products.product_detail', product_id=i.product_id) }}">{{ i.product.name }}</a>
+          <span class="muted small">{{ i.product.price|money }} each{% if i.product.stock < i.quantity %} · <span class="danger">only {{ i.product.stock }} left</span>{% endif %}</span>
+          <div class="line-actions">
+            <form method="post" action="{{ url_for('cart.update_cart', item_id=i.cart_item_id) }}" class="qty-form">
+              {{ m.csrf() }}
+              <div class="qty" data-qty data-autosubmit-qty>
+                <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
+                <label class="sr" for="q{{ i.cart_item_id }}">Quantity</label>
+                <input id="q{{ i.cart_item_id }}" type="number" name="quantity" value="{{ i.quantity }}" min="0" max="{{ i.product.stock }}">
+                <button type="button" data-step="1" aria-label="Increase quantity">+</button>
+              </div>
+              <noscript><button class="btn btn-sm">Update</button></noscript>
+            </form>
+            <form method="post" action="{{ url_for('cart.remove_from_cart', item_id=i.cart_item_id) }}">
+              {{ m.csrf() }}<button class="link-btn danger small" type="submit">Remove</button>
+            </form>
+          </div>
+        </div>
+        <span class="line-total">{{ i.line_total|money }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <aside class="panel summary">
+      <h2>Order summary</h2>
+      <dl>
+        <dt>Subtotal</dt><dd>{{ subtotal|money }}</dd>
+        <dt>Delivery</dt><dd>{{ 'Free' if shipping == 0 else shipping|money }}</dd>
+        <dt class="total">Total</dt><dd class="total">{{ total|money }}</dd>
+      </dl>
+      {% if shipping > 0 %}<p class="hint">Add {{ (config.FREE_SHIPPING_ABOVE - subtotal)|money }} more for free delivery.</p>{% endif %}
+      <a class="btn btn-primary btn-block" href="{{ url_for('cart.checkout') }}">Proceed to checkout</a>
+      <a class="btn btn-ghost btn-block" href="{{ url_for('products.shop') }}">Continue shopping</a>
+    </aside>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>Your cart is empty</h2>
+    <p>Browse the store and add what you need. Items in your cart stay saved to your account.</p>
+    <a class="btn btn-primary" href="{{ url_for('products.shop') }}">Browse products</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Categories{% endblock %}
+{% block admin %}
+<div class="admin-head"><h1>Categories</h1></div>
+<div class="admin-grid">
+  <div class="panel flush span-2">
+    <table class="table">
+      <thead><tr><th>Category</th><th>Description</th><th class="num">Products</th><th></th></tr></thead>
+      <tbody>
+      {% for c, n in rows %}
+        <tr><td><b>{{ c.category_name }}</b></td><td class="muted">{{ c.description or '' }}</td><td class="num">{{ n }}</td>
+          <td class="num actions"><a href="{{ url_for('admin.categories', edit=c.category_id) }}">Edit</a>
+            <form method="post" action="{{ url_for('admin.category_delete', category_id=c.category_id) }}" data-confirm="Delete {{ c.category_name }}?">
+              {{ m.csrf() }}<button class="link-btn danger" type="submit">Delete</button></form></td></tr>
+      {% else %}<tr><td colspan="4" class="muted">No categories yet. Add the first one.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" class="panel form">
+    {{ m.csrf() }}
+    <h2>{{ 'Edit ' ~ edit.category_name if edit else 'Add a category' }}</h2>
+    {% if edit %}<input type="hidden" name="category_id" value="{{ edit.category_id }}">{% endif %}
+    <label for="cn">Name</label>
+    <input id="cn" name="category_name" required maxlength="100" value="{{ edit.category_name if edit else request.form.get('category_name','') }}">
+    <label for="cd">Description</label>
+    <textarea id="cd" name="description" rows="3">{{ edit.description if edit and edit.description else '' }}</textarea>
+    <button class="btn btn-primary" type="submit">{{ 'Save category' if edit else 'Add category' }}</button>
+    {% if edit %}<a class="btn btn-ghost" href="{{ url_for('admin.categories') }}">Cancel</a>{% endif %}
+  </form>
+</div>
+{% endblock %}

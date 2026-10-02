@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}{{ category.category_name if category else ('Results for “' ~ q ~ '”' if q else 'All products') }}{% endblock %}
+{% block content %}
+<div class="wrap shop-layout">
+  <aside class="filters">
+    <form method="get" id="filter-form">
+      {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+      <h2 class="filter-title">Filter</h2>
+      <fieldset>
+        <legend>Category</legend>
+        <label class="radio"><input type="radio" name="category" value="" {{ 'checked' if not category }}> All</label>
+        {% for c in nav_categories %}
+        <label class="radio"><input type="radio" name="category" value="{{ c.category_id }}" {{ 'checked' if category and category.category_id == c.category_id }}> {{ c.category_name }}</label>
+        {% endfor %}
+      </fieldset>
+      <fieldset>
+        <legend>Price (₹)</legend>
+        <div class="price-range">
+          <label class="sr" for="min">Minimum</label><input id="min" type="number" name="min" min="0" placeholder="Min" value="{{ min_price|int if min_price is not none }}">
+          <span>to</span>
+          <label class="sr" for="max">Maximum</label><input id="max" type="number" name="max" min="0" placeholder="Max" value="{{ max_price|int if max_price is not none }}">
+        </div>
+      </fieldset>
+      <fieldset>
+        <label class="check"><input type="checkbox" name="in_stock" value="1" {{ 'checked' if in_stock }}> In stock only</label>
+      </fieldset>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <button class="btn btn-primary btn-block" type="submit">Apply filters</button>
+      <a class="btn btn-ghost btn-block" href="{{ url_for('products.shop') }}">Clear all</a>
+    </form>
+  </aside>
+
+  <section>
+    <div class="results-head">
+      <div>
+        <h1 class="page-title">{% if q %}Results for “{{ q }}”{% elif category %}{{ category.category_name }}{% else %}All products{% endif %}</h1>
+        <p class="muted">{{ pagination.total }} product{{ '' if pagination.total == 1 else 's' }}{% if category and category.description %} · {{ category.description }}{% endif %}</p>
+      </div>
+      <form method="get" class="sort">
+        {% for k, v in request.args.items() if k not in ('sort', 'page') %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+        <label for="sort">Sort by</label>
+        <select id="sort" name="sort" data-autosubmit>
+          <option value="newest" {{ 'selected' if sort=='newest' }}>Newest</option>
+          <option value="price_asc" {{ 'selected' if sort=='price_asc' }}>Price: low to high</option>
+          <option value="price_desc" {{ 'selected' if sort=='price_desc' }}>Price: high to low</option>
+          <option value="rating" {{ 'selected' if sort=='rating' }}>Customer rating</option>
+        </select>
+        <noscript><button class="btn btn-sm">Sort</button></noscript>
+      </form>
+    </div>
+
+    {% if pagination.items %}
+      <div class="grid">{% for p in pagination.items %}{{ m.product_card(p) }}{% endfor %}</div>
+      {{ m.pager(pagination) }}
+    {% else %}
+      <div class="empty-state">
+        <h2>No products match these filters</h2>
+        <p>Try a shorter search word, widen the price range, or clear the filters.</p>
+        <a class="btn btn-primary" href="{{ url_for('products.shop') }}">Clear filters</a>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

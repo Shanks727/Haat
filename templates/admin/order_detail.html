@@ -1,0 +1,53 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Order {{ order.number }}{% endblock %}
+{% block admin %}
+<div class="admin-head">
+  <div><h1>Order {{ order.number }}</h1>
+    <span class="muted">{{ order.order_date.strftime('%d %b %Y, %I:%M %p') }} · {{ order.user.name }} ({{ order.user.email }})</span></div>
+  {{ m.status(order.status) }}
+</div>
+{% include "partials/timeline.html" %}
+<div class="admin-grid">
+  <div class="panel flush span-2">
+    <table class="table">
+      <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr></thead>
+      <tbody>
+      {% for it in order.items %}
+        <tr><td>{{ it.product.name }}</td><td class="num">{{ it.quantity }}</td><td class="num">{{ it.unit_price|money }}</td><td class="num">{{ it.line_total|money }}</td></tr>
+      {% endfor %}
+      <tr><td colspan="3" class="num muted">Subtotal</td><td class="num">{{ order.subtotal|money }}</td></tr>
+      <tr><td colspan="3" class="num muted">Delivery</td><td class="num">{{ order.shipping_fee|money }}</td></tr>
+      <tr><td colspan="3" class="num"><b>Total</b></td><td class="num"><b>{{ order.total_amount|money }}</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <div class="panel">
+      <h2>Update status</h2>
+      {% set nxt = {'Placed': ['Shipped', 'Cancelled'], 'Shipped': ['Delivered']}.get(order.status, []) %}
+      {% if nxt %}
+        {% for s in nxt %}
+        <form method="post" {% if s == 'Cancelled' %}data-confirm="Cancel this order and restock its items?"{% endif %}>
+          {{ m.csrf() }}<input type="hidden" name="status" value="{{ s }}">
+          <button class="btn btn-block {{ 'btn-ghost danger' if s == 'Cancelled' else 'btn-primary' }}" type="submit">{{ 'Cancel order' if s == 'Cancelled' else 'Mark as ' ~ s }}</button>
+        </form>
+        {% endfor %}
+      {% else %}
+        <p class="muted">{{ 'Waiting for the customer to pay.' if order.status == 'Pending Payment' else 'No further changes for a ' ~ order.status|lower ~ ' order.' }}</p>
+      {% endif %}
+    </div>
+    <div class="panel">
+      <h2>Payment</h2>
+      {% for p in order.payments %}
+        <p><b>{{ p.method }}</b> · {{ p.status }}<br><span class="muted small">{{ p.amount|money }}{% if p.paid_at %} · paid {{ p.paid_at.strftime('%d %b, %H:%M') }}{% endif %}{% if p.gateway_payment_id %}<br>Ref: {{ p.gateway_payment_id }}{% endif %}</span></p>
+      {% endfor %}
+      {% if order.status != 'Pending Payment' %}<a href="{{ url_for('payment.invoice', order_id=order.order_id) }}" target="_blank">Open invoice PDF</a>{% endif %}
+    </div>
+    <div class="panel">
+      <h2>Ship to</h2>
+      <p>{{ order.ship_name }}<br>{{ order.ship_address }}<br>{{ order.ship_city }} – {{ order.ship_pincode }}<br>{{ order.ship_phone }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

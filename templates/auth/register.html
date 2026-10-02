@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Create an account{% endblock %}
+{% block content %}
+<section class="wrap auth">
+  <form method="post" class="panel form">
+    {{ m.csrf() }}
+    <h1>Create an account</h1>
+    <label for="name">Full name</label>
+    <input id="name" name="name" required autocomplete="name" value="{{ form.get('name','') }}">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" required autocomplete="email" value="{{ form.get('email','') }}">
+    <label for="phone">Mobile number <span class="muted">(optional)</span></label>
+    <input id="phone" name="phone" inputmode="numeric" pattern="[6-9][0-9]{9}" maxlength="10" autocomplete="tel" value="{{ form.get('phone','') }}">
+    <div class="two">
+      <div><label for="password">Password</label>
+        <input id="password" name="password" type="password" minlength="6" required autocomplete="new-password"></div>
+      <div><label for="confirm">Confirm password</label>
+        <input id="confirm" name="confirm" type="password" minlength="6" required autocomplete="new-password"></div>
+    </div>
+    <p class="hint">At least 6 characters. Passwords are stored as salted hashes.</p>
+    <button class="btn btn-primary btn-block" type="submit">Create account</button>
+    <p class="muted center">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </form>
+</section>
+{% endblock %}

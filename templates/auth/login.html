@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<section class="wrap auth">
+  <form method="post" class="panel form">
+    {{ m.csrf() }}
+    <h1>Log in</h1>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" required autocomplete="email" value="{{ request.form.get('email','') }}">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required autocomplete="current-password">
+    <label class="check"><input type="checkbox" name="remember" value="1"> Keep me logged in</label>
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+    <p class="muted center">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+  </form>
+  <aside class="demo-note">
+    <h2>Demo accounts</h2>
+    <p>Created by <code>seed.py</code>:</p>
+    <p><b>Customer</b><br>demo@haat.local / demo123</p>
+    <p><b>Admin</b><br>admin@haat.local / admin123</p>
+  </aside>
+</section>
+{% endblock %}

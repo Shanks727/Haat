@@ -1,0 +1,19 @@
+{# Order tracking: Placed -> Shipped -> Delivered #}
+{% set steps = [('Placed', order.order_date if order.status != 'Pending Payment' else none),
+                ('Shipped', order.shipped_at), ('Delivered', order.delivered_at)] %}
+{% set reached = {'Pending Payment': 0, 'Placed': 1, 'Shipped': 2, 'Delivered': 3, 'Cancelled': 0}[order.status] %}
+{% if order.status == 'Cancelled' %}
+  <div class="track cancelled"><p><b>Cancelled</b> on {{ order.cancelled_at.strftime('%d %b %Y, %I:%M %p') if order.cancelled_at else '' }}</p></div>
+{% elif order.status == 'Pending Payment' %}
+  <div class="track pending"><p><b>Waiting for payment.</b> Your order is placed once the payment goes through.</p></div>
+{% else %}
+<ol class="track">
+  {% for name, when in steps %}
+  <li class="{{ 'done' if loop.index <= reached }}{{ ' now' if loop.index == reached }}">
+    <span class="dot" aria-hidden="true"></span>
+    <b>{{ name }}</b>
+    <span class="small muted">{{ when.strftime('%d %b, %I:%M %p') if when else 'Pending' }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}

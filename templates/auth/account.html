@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Your account{% endblock %}
+{% block content %}
+<section class="wrap narrow">
+  <h1 class="page-title">Hi, {{ current_user.name.split()[0] }}</h1>
+  <p class="muted">{{ current_user.email }} · member since {{ current_user.created_at.strftime('%b %Y') }} · <a href="{{ url_for('cart.orders') }}">{{ order_count }} order{{ '' if order_count == 1 else 's' }}</a></p>
+
+  <div class="two-col">
+    <form method="post" class="panel form">
+      {{ m.csrf() }}<input type="hidden" name="action" value="profile">
+      <h2>Profile</h2>
+      <label for="name">Full name</label>
+      <input id="name" name="name" value="{{ current_user.name }}" required>
+      <label for="phone">Mobile number</label>
+      <input id="phone" name="phone" value="{{ current_user.phone or '' }}" inputmode="numeric" maxlength="10">
+      <button class="btn btn-primary" type="submit">Save profile</button>
+    </form>
+    <form method="post" class="panel form">
+      {{ m.csrf() }}<input type="hidden" name="action" value="password">
+      <h2>Change password</h2>
+      <label for="current">Current password</label>
+      <input id="current" name="current" type="password" required autocomplete="current-password">
+      <label for="new">New password</label>
+      <input id="new" name="new" type="password" minlength="6" required autocomplete="new-password">
+      <button class="btn btn-primary" type="submit">Change password</button>
+    </form>
+  </div>
+  <form method="post" action="{{ url_for('auth.logout') }}" class="logout-row">
+    {{ m.csrf() }}<button class="btn btn-ghost" type="submit">Log out</button>
+  </form>
+</section>
+{% endblock %}

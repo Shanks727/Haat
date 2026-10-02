@@ -1,0 +1,54 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Sales reports{% endblock %}
+{% block admin %}
+<div class="admin-head"><h1>Sales report</h1>
+  <a class="btn btn-ghost" href="{{ url_for('admin.reports', **{'from': d_from, 'to': d_to, 'format': 'csv'}) }}">Download CSV</a></div>
+<form method="get" class="toolbar">
+  <label for="from">From</label><input id="from" type="date" name="from" value="{{ d_from }}">
+  <label for="to">To</label><input id="to" type="date" name="to" value="{{ d_to }}">
+  <button class="btn btn-primary" type="submit">Show report</button>
+</form>
+<p class="muted">Confirmed orders (placed, shipped or delivered) from {{ d_from.strftime('%d %b %Y') }} to {{ d_to.strftime('%d %b %Y') }}.</p>
+
+<div class="kpis">
+  <div class="kpi"><span>Revenue</span><b>{{ summary.revenue|money }}</b></div>
+  <div class="kpi"><span>Orders</span><b>{{ summary.orders }}</b></div>
+  <div class="kpi"><span>Items sold</span><b>{{ summary.items }}</b></div>
+  <div class="kpi"><span>Average order value</span><b>{{ summary.aov|money }}</b></div>
+  <div class="kpi"><span>Failed payments</span><b>{{ failed }}</b></div>
+</div>
+
+<div class="admin-grid">
+  <section class="panel flush">
+    <h2 class="pad">Sales by category</h2>
+    <table class="table">
+      <tbody>{% for name, amt in cats %}
+        <tr><td>{{ name }}</td><td class="num">{{ amt|money }}</td>
+          <td class="num muted">{{ '%.2f'|format((amt / summary.revenue * 100) if summary.revenue else 0) }}%</td></tr>
+      {% else %}<tr><td class="muted">No sales in this period.</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+  <section class="panel flush span-2">
+    <h2 class="pad">Top products</h2>
+    <table class="table">
+      <thead><tr><th>Product</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead>
+      <tbody>{% for name, v in prods %}
+        <tr><td>{{ name }}</td><td class="num">{{ v[0] }}</td><td class="num">{{ v[1]|money }}</td></tr>
+      {% else %}<tr><td colspan="3" class="muted">No sales in this period.</td></tr>{% endfor %}</tbody>
+    </table>
+    {% if by_method %}<p class="pad muted small">Payment split: {% for k, v in by_method.items() %}{{ k }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+  </section>
+  <section class="panel flush span-3">
+    <h2 class="pad">Orders in this period</h2>
+    <table class="table">
+      <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th class="num">Total</th></tr></thead>
+      <tbody>{% for o in orders|reverse %}
+        <tr><td><a href="{{ url_for('admin.order_detail', order_id=o.order_id) }}">{{ o.number }}</a></td>
+          <td>{{ o.order_date.strftime('%d %b %Y') }}</td><td>{{ o.user.name }}</td><td>{{ m.status(o.status) }}</td>
+          <td class="num">{{ o.total_amount|money }}</td></tr>
+      {% else %}<tr><td colspan="5" class="muted">No orders in this period.</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

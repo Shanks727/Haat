@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Your orders{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Your orders</h1>
+  <nav class="chips" aria-label="Filter by status">
+    <a href="{{ url_for('cart.orders') }}" class="{{ 'on' if not status }}">All</a>
+    {% for s in ['Pending Payment','Placed','Shipped','Delivered','Cancelled'] %}
+      <a href="{{ url_for('cart.orders', status=s) }}" class="{{ 'on' if status == s }}">{{ s }}</a>
+    {% endfor %}
+  </nav>
+  {% if orders %}
+  <div class="order-list">
+    {% for o in orders %}
+    <a class="order-row" href="{{ url_for('cart.order_detail', order_id=o.order_id) }}">
+      <div class="order-thumbs">{% for it in o.items[:3] %}{{ m.tile(it.product, 'tile-xs') }}{% endfor %}</div>
+      <div>
+        <b>{{ o.number }}</b>
+        <span class="muted small">{{ o.order_date.strftime('%d %b %Y') }} · {{ o.item_count }} item{{ '' if o.item_count == 1 else 's' }} · {{ o.payment_method }}</span>
+      </div>
+      {{ m.status(o.status) }}
+      <span class="line-total">{{ o.total_amount|money }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>{{ 'No ' ~ status|lower ~ ' orders' if status else 'No orders yet' }}</h2>
+    <p>When you place an order, you can track it here.</p>
+    <a class="btn btn-primary" href="{{ url_for('products.shop') }}">Start shopping</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

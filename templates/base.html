@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ store_name }}{% endblock %} · {{ store_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛍️</text></svg>">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<a class="skip" href="#main">Skip to content</a>
+{% block header %}
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="logo" href="{{ url_for('products.home') }}">{{ store_name|lower }}</a>
+    <form class="search" action="{{ url_for('products.shop') }}" method="get" role="search">
+      <label class="sr" for="q">Search products</label>
+      <input id="q" name="q" type="search" placeholder="Search for rice, headphones, notebooks…" value="{{ request.args.get('q','') }}">
+      <button type="submit" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+    </form>
+    <nav class="user-nav" aria-label="Account">
+      {% if current_user.is_authenticated %}
+        {% if current_user.is_admin %}<a href="{{ url_for('admin.dashboard') }}">Admin</a>{% endif %}
+        <a href="{{ url_for('cart.orders') }}">Orders</a>
+        <a href="{{ url_for('cart.wishlist') }}">Wishlist{% if wish_ids %} <span class="count">{{ wish_ids|length }}</span>{% endif %}</a>
+        <a class="cart-link" href="{{ url_for('cart.view_cart') }}">Cart <span class="count">{{ cart_count }}</span></a>
+        <a href="{{ url_for('auth.account') }}" title="Your account" class="avatar">{{ current_user.name[:1]|upper }}</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Log in</a>
+        <a class="btn btn-sm btn-primary" href="{{ url_for('auth.register') }}">Sign up</a>
+      {% endif %}
+    </nav>
+  </div>
+  <nav class="cat-bar" aria-label="Categories">
+    <div class="wrap">
+      <a href="{{ url_for('products.shop') }}" class="{{ 'on' if request.endpoint=='products.shop' and not request.args.get('category') }}">All products</a>
+      {% for c in nav_categories %}
+        <a href="{{ url_for('products.shop', category=c.category_id) }}" class="{{ 'on' if request.args.get('category')|int == c.category_id }}">{{ c.category_name }}</a>
+      {% endfor %}
+    </div>
+  </nav>
+</header>
+{% endblock %}
+
+{% block flashes %}{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% if msgs %}
+  <div class="flash-stack wrap" role="status">
+    {% for cat, m in msgs %}<div class="flash flash-{{ cat }}">{{ m }}<button type="button" class="flash-x" aria-label="Dismiss">×</button></div>{% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}{% endblock %}
+
+<main id="main">{% block content %}{% endblock %}</main>
+
+{% block footer %}
+<footer class="site-footer">
+  <div class="wrap footer-row">
+    <div>
+      <span class="logo logo-sm">{{ store_name|lower }}</span>
+      <p>Everyday goods, packed the same day.<br>Free delivery on orders above ₹499.</p>
+    </div>
+    <div>
+      <h4>Shop</h4>
+      {% for c in nav_categories[:5] %}<a href="{{ url_for('products.shop', category=c.category_id) }}">{{ c.category_name }}</a>{% endfor %}
+    </div>
+    <div>
+      <h4>Your account</h4>
+      <a href="{{ url_for('cart.orders') }}">Track an order</a>
+      <a href="{{ url_for('cart.wishlist') }}">Wishlist</a>
+      <a href="{{ url_for('auth.account') }}">Profile</a>
+    </div>
+  </div>
+  <div class="wrap fine">Mini project · T.Y. B.Sc. Computer Science · Flask + MySQL</div>
+</footer>
+{% endblock %}
+<script>window.CSRF = "{{ csrf_token() }}";</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

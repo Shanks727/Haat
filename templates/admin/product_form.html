@@ -1,0 +1,38 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}{{ 'Edit ' ~ product.name if product else 'Add product' }}{% endblock %}
+{% block admin %}
+<div class="admin-head"><h1>{{ 'Edit product' if product else 'Add product' }}</h1>
+  <a href="{{ url_for('admin.products') }}">Back to products</a></div>
+<form method="post" enctype="multipart/form-data" class="panel form admin-form">
+  {{ m.csrf() }}
+  <label for="name">Product name</label>
+  <input id="name" name="name" required maxlength="150" value="{{ form.get('name','') }}">
+  <div class="three">
+    <div><label for="category_id">Category</label>
+      <select id="category_id" name="category_id" required>
+        {% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if form.get('category_id')|string == c.category_id|string }}>{{ c.category_name }}</option>{% endfor %}
+      </select></div>
+    <div><label for="price">Price (₹)</label>
+      <input id="price" name="price" type="number" step="0.01" min="0.01" required value="{{ form.get('price','') }}"></div>
+    <div><label for="stock">Units in stock</label>
+      <input id="stock" name="stock" type="number" min="0" required value="{{ form.get('stock', 0) }}"></div>
+  </div>
+  <label for="description">Description</label>
+  <textarea id="description" name="description" rows="5">{{ form.get('description','') }}</textarea>
+  <label for="image">Product photo <span class="muted">(PNG, JPG or WEBP, up to 4 MB)</span></label>
+  <div class="image-row">
+    {% if product %}{{ m.tile(product, 'tile-sm') }}{% endif %}
+    <div>
+      <input id="image" name="image" type="file" accept=".png,.jpg,.jpeg,.webp">
+      {% if product and product.image %}<label class="check"><input type="checkbox" name="remove_image" value="1"> Remove current photo</label>{% endif %}
+      <p class="hint">Without a photo, the store shows a coloured tile with the product's first word.</p>
+    </div>
+  </div>
+  <label class="check"><input type="checkbox" name="is_active" value="1" {{ 'checked' if form.get('is_active') }}> Show this product in the store</label>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if product else 'Add product' }}</button>
+    <a class="btn btn-ghost" href="{{ url_for('admin.products') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

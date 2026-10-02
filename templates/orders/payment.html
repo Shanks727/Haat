@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Pay for {{ order.number }}{% endblock %}
+{% block content %}
+<section class="wrap narrow">
+  <div class="panel pay-panel">
+    <p class="muted">Order {{ order.number }} · {{ order.item_count }} item{{ '' if order.item_count == 1 else 's' }}</p>
+    <h1 class="pay-amount">{{ order.total_amount|money }}</h1>
+    {% if order.payment and order.payment.status == 'Failed' %}
+      <p class="flash flash-error">The last attempt failed. You haven't been charged.</p>
+    {% endif %}
+
+    {% if rzp_order_id %}
+      <button id="rzp-btn" class="btn btn-primary btn-block btn-lg" type="button">Pay {{ order.total_amount|money }} with Razorpay</button>
+      <p class="hint center">Test mode: use card 4111 1111 1111 1111, any future expiry, any CVV, or UPI <code>success@razorpay</code>.</p>
+      <form id="rzp-ok" method="post" action="{{ url_for('payment.verify', order_id=order.order_id) }}">
+        {{ m.csrf() }}
+        <input type="hidden" name="razorpay_payment_id"><input type="hidden" name="razorpay_order_id"><input type="hidden" name="razorpay_signature">
+      </form>
+      <form id="rzp-fail" method="post" action="{{ url_for('payment.failed', order_id=order.order_id) }}">
+        {{ m.csrf() }}<input type="hidden" name="reason">
+      </form>
+    {% else %}
+      <div class="demo-gateway">
+        <p><b>Demo payment gateway</b><br><span class="muted small">No Razorpay keys are set in <code>.env</code>, so payments are simulated. Add test keys to use real Razorpay Checkout.</span></p>
+        <form method="post" action="{{ url_for('payment.demo', order_id=order.order_id) }}">
+          {{ m.csrf() }}
+          <button class="btn btn-primary btn-block btn-lg" name="outcome" value="success" type="submit">Pay {{ order.total_amount|money }}</button>
+          <button class="btn btn-ghost btn-block" name="outcome" value="fail" type="submit">Simulate a failed payment</button>
+        </form>
+      </div>
+    {% endif %}
+    <p class="center small"><a href="{{ url_for('cart.order_detail', order_id=order.order_id) }}">View order details</a></p>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+{% if rzp_order_id %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function () {
+  var ok = document.getElementById('rzp-ok'), fail = document.getElementById('rzp-fail');
+  var rzp = new Razorpay({
+    key: "{{ key_id }}",
+    amount: {{ amount_paise }},
+    currency: "INR",
+    name: "{{ store_name }}",
+    description: "Order {{ order.number }}",
+    order_id: "{{ rzp_order_id }}",
+    prefill: { name: {{ order.ship_name|tojson }}, email: {{ current_user.email|tojson }}, contact: "{{ order.ship_phone }}" },
+    theme: { color: "#1C2541" },
+    handler: function (r) {
+      ok.razorpay_payment_id.value = r.razorpay_payment_id;
+      ok.razorpay_order_id.value = r.razorpay_order_id;
+      ok.razorpay_signature.value = r.razorpay_signature;
+      ok.submit();
+    }
+  });
+  rzp.on('payment.failed', function (r) {
+    fail.reason.value = 'Payment failed: ' + (r.error && r.error.description || 'unknown reason') + '. You can try again.';
+    fail.submit();
+  });
+  document.getElementById('rzp-btn').addEventListener('click', function () { rzp.open(); });
+})();
+</script>
+{% endif %}
+{% endblock %}

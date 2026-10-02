@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Shop everyday essentials{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Everything for the week, delivered to your door.</h1>
+      <p class="lede">Groceries, gadgets, books and home basics in one cart. Pay online or cash on delivery, and track every order from packing to doorstep.</p>
+      <form class="hero-search" action="{{ url_for('products.shop') }}" method="get">
+        <label class="sr" for="hq">Search products</label>
+        <input id="hq" name="q" type="search" placeholder="What do you need today?">
+        <button class="btn btn-ink" type="submit">Search</button>
+      </form>
+    </div>
+    <ol class="how" aria-label="How ordering works">
+      <li><b>Add to cart</b><span>Pick from {{ counts.values()|sum }} products</span></li>
+      <li><b>Pay securely</b><span>UPI, cards, netbanking or cash</span></li>
+      <li><b>Track it</b><span>Placed, shipped, delivered</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="wrap section">
+  <h2 class="section-title">Shop by category</h2>
+  <div class="cat-grid">
+    {% for c in nav_categories %}
+    <a class="cat-card" href="{{ url_for('products.shop', category=c.category_id) }}" style="--tile: {{ tile_colour(c.category_id) }}">
+      <span class="cat-name">{{ c.category_name }}</span>
+      <span class="cat-count">{{ counts.get(c.category_id, 0) }} products</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <h2 class="section-title">New in the store</h2>
+    <a href="{{ url_for('products.shop', sort='newest') }}">See all products</a>
+  </div>
+  <div class="grid">{% for p in newest %}{{ m.product_card(p) }}{% endfor %}</div>
+</section>
+
+{% if top_rated %}
+<section class="wrap section">
+  <div class="section-head">
+    <h2 class="section-title">Customers rate these highest</h2>
+    <a href="{{ url_for('products.shop', sort='rating') }}">Sort by rating</a>
+  </div>
+  <div class="grid">{% for p in top_rated %}{{ m.product_card(p) }}{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

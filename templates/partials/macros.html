@@ -1,0 +1,68 @@
+{% macro stars(value, count=None, size='') -%}
+<span class="stars {{ size }}" aria-label="{{ value }} out of 5 stars">
+  {%- for i in range(1, 6) -%}
+    <span class="{{ 'full' if value >= i else ('half' if value >= i - 0.5 else '') }}">★</span>
+  {%- endfor -%}
+  {% if count is not none %}<span class="star-count">{{ value if value else '' }}{% if count %} ({{ count }}){% else %}No reviews{% endif %}</span>{% endif %}
+</span>
+{%- endmacro %}
+
+{% macro tile(p, cls='') -%}
+{% if p.image %}
+  <img class="tile {{ cls }}" src="{{ url_for('static', filename='uploads/' ~ p.image) }}" alt="{{ p.name }}" loading="lazy">
+{% else %}
+  <div class="tile tile-type {{ cls }}" style="--tile: {{ tile_colour(p.category_id) }}" aria-hidden="true">
+    <span>{{ p.name.split()[0] }}</span>
+  </div>
+{% endif %}
+{%- endmacro %}
+
+{% macro product_card(p) -%}
+<article class="card">
+  <a class="card-link" href="{{ url_for('products.product_detail', product_id=p.product_id) }}">
+    {{ tile(p) }}
+    <h3>{{ p.name }}</h3>
+  </a>
+  <div class="card-meta">
+    {{ stars(p.rating_avg, p.rating_count, 'sm') }}
+  </div>
+  <div class="card-foot">
+    <span class="price">{{ p.price|money }}</span>
+    {% if p.stock == 0 %}
+      <span class="tag tag-muted">Out of stock</span>
+    {% else %}
+      <form method="post" action="{{ url_for('cart.add_to_cart', product_id=p.product_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-primary" type="submit">Add to cart</button>
+      </form>
+    {% endif %}
+  </div>
+  <form class="wish" method="post" action="{{ url_for('cart.toggle_wishlist', product_id=p.product_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="wish-btn {{ 'on' if p.product_id in wish_ids }}" aria-label="{{ 'Remove from' if p.product_id in wish_ids else 'Save to' }} wishlist" aria-pressed="{{ 'true' if p.product_id in wish_ids else 'false' }}">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8.1 3 4 6.9 4c2.2 0 3.6 1.2 5.1 3 1.5-1.8 2.9-3 5.1-3C21 4 23.1 8.1 21.6 11.6 19.5 16.4 12 21 12 21z"/></svg>
+    </button>
+  </form>
+</article>
+{%- endmacro %}
+
+{% macro status(s) -%}
+<span class="status status-{{ s|lower|replace(' ', '-') }}">{{ s }}</span>
+{%- endmacro %}
+
+{% macro pager(pagination) -%}
+{% if pagination.pages > 1 %}
+<nav class="pager" aria-label="Pages">
+  {% if pagination.has_prev %}<a href="{{ page_url(pagination.prev_num) }}">Previous</a>{% endif %}
+  {% for n in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if n %}
+      {% if n == pagination.page %}<span class="on" aria-current="page">{{ n }}</span>
+      {% else %}<a href="{{ page_url(n) }}">{{ n }}</a>{% endif %}
+    {% else %}<span class="gap">…</span>{% endif %}
+  {% endfor %}
+  {% if pagination.has_next %}<a href="{{ page_url(pagination.next_num) }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}

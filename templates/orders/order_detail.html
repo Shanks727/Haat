@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Order {{ order.number }}{% endblock %}
+{% block content %}
+<section class="wrap">
+  <nav class="crumbs"><a href="{{ url_for('cart.orders') }}">Your orders</a> / <span>{{ order.number }}</span></nav>
+  <div class="order-head">
+    <div>
+      <h1 class="page-title">Order {{ order.number }}</h1>
+      <p class="muted">Placed {{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</p>
+    </div>
+    {{ m.status(order.status) }}
+  </div>
+
+  {% include "partials/timeline.html" %}
+
+  <div class="checkout-layout">
+    <div class="line-items">
+      {% for it in order.items %}
+      <div class="line">
+        {{ m.tile(it.product, 'tile-sm') }}
+        <div class="line-main">
+          <a class="line-name" href="{{ url_for('products.product_detail', product_id=it.product_id) }}">{{ it.product.name }}</a>
+          <span class="muted small">{{ it.quantity }} × {{ it.unit_price|money }}</span>
+          {% if order.status == 'Delivered' %}<a class="small" href="{{ url_for('products.product_detail', product_id=it.product_id) }}#reviews">Rate this product</a>{% endif %}
+        </div>
+        <span class="line-total">{{ it.line_total|money }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <aside>
+      <div class="panel summary">
+        <h2>Payment</h2>
+        <dl>
+          <dt>Subtotal</dt><dd>{{ order.subtotal|money }}</dd>
+          <dt>Delivery</dt><dd>{{ 'Free' if order.shipping_fee == 0 else order.shipping_fee|money }}</dd>
+          <dt class="total">Total</dt><dd class="total">{{ order.total_amount|money }}</dd>
+          <dt>Method</dt><dd>{{ order.payment.method if order.payment else order.payment_method }}</dd>
+          <dt>Status</dt><dd>{{ order.payment.status if order.payment else '–' }}</dd>
+          {% if order.payment and order.payment.gateway_payment_id %}<dt>Ref.</dt><dd class="small">{{ order.payment.gateway_payment_id }}</dd>{% endif %}
+        </dl>
+        {% if order.status == 'Pending Payment' %}
+          <a class="btn btn-primary btn-block" href="{{ url_for('payment.pay', order_id=order.order_id) }}">Pay {{ order.total_amount|money }}</a>
+        {% endif %}
+        {% if order.is_confirmed or (order.status == 'Cancelled' and order.payment and order.payment.status == 'Refund Initiated') %}
+          <a class="btn btn-ghost btn-block" href="{{ url_for('payment.invoice', order_id=order.order_id) }}" target="_blank">Download invoice (PDF)</a>
+        {% endif %}
+        {% if order.can_cancel %}
+        <form method="post" action="{{ url_for('cart.cancel', order_id=order.order_id) }}" data-confirm="Cancel order {{ order.number }}?">
+          {{ m.csrf() }}<button class="btn btn-ghost btn-block danger" type="submit">Cancel order</button>
+        </form>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <h2>Delivering to</h2>
+        <p><b>{{ order.ship_name }}</b><br>{{ order.ship_address }}<br>{{ order.ship_city }} – {{ order.ship_pincode }}<br>{{ order.ship_phone }}</p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

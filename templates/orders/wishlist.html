@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Wishlist{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Wishlist</h1>
+  {% if items %}
+  <div class="line-items">
+    {% for w in items %}{% set p = w.product %}
+    <div class="line">
+      <a href="{{ url_for('products.product_detail', product_id=p.product_id) }}">{{ m.tile(p, 'tile-sm') }}</a>
+      <div class="line-main">
+        <a class="line-name" href="{{ url_for('products.product_detail', product_id=p.product_id) }}">{{ p.name }}</a>
+        <span class="muted small">Saved {{ w.created_at.strftime('%d %b') }} · {{ 'In stock' if p.stock > 0 and p.is_active else 'Out of stock' }}</span>
+        <div class="line-actions">
+          {% if p.stock > 0 and p.is_active %}
+          <form method="post" action="{{ url_for('cart.move_to_cart', product_id=p.product_id) }}">
+            {{ m.csrf() }}<button class="btn btn-sm btn-primary" type="submit">Move to cart</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('cart.toggle_wishlist', product_id=p.product_id) }}">
+            {{ m.csrf() }}<button class="link-btn danger small" type="submit">Remove</button>
+          </form>
+        </div>
+      </div>
+      <span class="line-total">{{ p.price|money }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>No saved items yet</h2>
+    <p>Tap the heart on any product to save it here for later.</p>
+    <a class="btn btn-primary" href="{{ url_for('products.shop') }}">Browse products</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

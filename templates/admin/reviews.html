@@ -1,0 +1,25 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Reviews{% endblock %}
+{% block admin %}
+<div class="admin-head"><h1>Reviews</h1></div>
+<nav class="chips" aria-label="Filter by rating">
+  <a href="{{ url_for('admin.reviews') }}" class="{{ 'on' if not rating }}">All</a>
+  {% for s in range(5, 0, -1) %}<a href="{{ url_for('admin.reviews', rating=s) }}" class="{{ 'on' if rating == s }}">{{ s }}★</a>{% endfor %}
+</nav>
+<div class="panel flush">
+<table class="table">
+  <thead><tr><th>Rating</th><th>Product</th><th>Customer</th><th>Review</th><th>Date</th><th></th></tr></thead>
+  <tbody>
+  {% for r in reviews %}
+    <tr><td>{{ m.stars(r.rating, size='sm') }}</td>
+      <td><a href="{{ url_for('products.product_detail', product_id=r.product_id) }}">{{ r.product.name }}</a></td>
+      <td>{{ r.user.name }}</td><td class="wrap-cell">{{ r.comment or '–' }}</td>
+      <td>{{ r.created_at.strftime('%d %b %Y') }}</td>
+      <td class="num"><form method="post" action="{{ url_for('reviews.delete', review_id=r.review_id) }}" data-confirm="Remove this review?">
+        {{ m.csrf() }}<input type="hidden" name="from_admin" value="1"><button class="link-btn danger" type="submit">Remove</button></form></td></tr>
+  {% else %}<tr><td colspan="6" class="muted">No reviews yet.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

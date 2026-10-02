@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block body_class %}admin{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block flashes %}{% endblock %}
+{% block content %}
+<div class="admin-shell">
+  <aside class="admin-nav">
+    <a class="logo" href="{{ url_for('admin.dashboard') }}">{{ store_name|lower }}<small>admin</small></a>
+    <nav aria-label="Admin">
+      {% set ep = request.endpoint %}
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'on' if ep == 'admin.dashboard' }}">Dashboard</a>
+      <a href="{{ url_for('admin.orders') }}" class="{{ 'on' if ep.startswith('admin.order') }}">Orders</a>
+      <a href="{{ url_for('admin.products') }}" class="{{ 'on' if ep.startswith('admin.product') }}">Products</a>
+      <a href="{{ url_for('admin.categories') }}" class="{{ 'on' if ep.startswith('admin.categor') }}">Categories</a>
+      <a href="{{ url_for('admin.users') }}" class="{{ 'on' if ep.startswith('admin.user') }}">Customers</a>
+      <a href="{{ url_for('admin.reviews') }}" class="{{ 'on' if ep == 'admin.reviews' }}">Reviews</a>
+      <a href="{{ url_for('admin.reports') }}" class="{{ 'on' if ep == 'admin.reports' }}">Sales reports</a>
+    </nav>
+    <div class="admin-foot">
+      <a href="{{ url_for('products.home') }}">View store</a>
+      <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-btn" type="submit">Log out</button></form>
+    </div>
+  </aside>
+  <div class="admin-main">
+    {% with msgs = get_flashed_messages(with_categories=true) %}{% if msgs %}
+      <div class="flash-stack">{% for cat, msg in msgs %}<div class="flash flash-{{ cat }}">{{ msg }}<button type="button" class="flash-x" aria-label="Dismiss">×</button></div>{% endfor %}</div>
+    {% endif %}{% endwith %}
+    {% block admin %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

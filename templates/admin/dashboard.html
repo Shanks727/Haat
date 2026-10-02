@@ -1,0 +1,76 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Dashboard{% endblock %}
+{% block admin %}
+<div class="admin-head"><h1>Dashboard</h1><span class="muted">Hi {{ current_user.name.split()[0] }}, here is how the store is doing.</span></div>
+
+<div class="kpis">
+  <div class="kpi"><span>Revenue (confirmed orders)</span><b>{{ kpis.revenue|money }}</b></div>
+  <div class="kpi"><span>Confirmed orders</span><b>{{ kpis.orders }}</b></div>
+  <a class="kpi kpi-alert" href="{{ url_for('admin.orders', status='Placed') }}"><span>Waiting to ship</span><b>{{ kpis.to_ship }}</b></a>
+  <div class="kpi"><span>Customers</span><b>{{ kpis.customers }}</b></div>
+  <a class="kpi {{ 'kpi-alert' if kpis.low_stock }}" href="#low-stock"><span>Low on stock</span><b>{{ kpis.low_stock }}</b></a>
+</div>
+
+<div class="admin-grid">
+  <section class="panel span-2">
+    <h2>Sales, last 14 days</h2>
+    {% set smax = (sales_chart['values']|max) or 1 %}
+    <div class="vbars" role="img" aria-label="Revenue per day for the last 14 days">
+      {% for label in sales_chart['labels'] %}{% set v = sales_chart['values'][loop.index0] %}
+      <div class="vbar" title="{{ label }}: {{ v|money }}">
+        <span class="vbar-val">{{ (v/1000)|round(1) ~ 'k' if v >= 1000 else (v|int if v else '') }}</span>
+        <i style="height: {{ (v / smax * 72)|round(1) }}%"></i>
+        <span class="vbar-label">{{ label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="panel">
+    <h2>Orders by status</h2>
+    {% set tmax = (status_chart['values']|max) or 1 %}
+    <ul class="hbars">
+      {% for label in status_chart['labels'] %}{% set v = status_chart['values'][loop.index0] %}
+      <li><a href="{{ url_for('admin.orders', status=label) }}">{{ label }}</a>
+        <span class="hbar"><i class="status-{{ label|lower|replace(' ', '-') }}" style="width: {{ (v / tmax * 100)|round(1) }}%"></i></span><b>{{ v }}</b></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel span-2">
+    <div class="section-head"><h2>Recent orders</h2><a href="{{ url_for('admin.orders') }}">All orders</a></div>
+    <table class="table">
+      <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Status</th><th class="num">Total</th></tr></thead>
+      <tbody>
+      {% for o in recent %}
+        <tr><td><a href="{{ url_for('admin.order_detail', order_id=o.order_id) }}">{{ o.number }}</a></td>
+          <td>{{ o.user.name }}</td><td>{{ o.order_date.strftime('%d %b, %H:%M') }}</td>
+          <td>{{ m.status(o.status) }}</td><td class="num">{{ o.total_amount|money }}</td></tr>
+      {% else %}<tr><td colspan="5" class="muted">No orders yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section class="panel">
+    <h2>Best sellers</h2>
+    <ol class="rank">
+      {% for name, qty, amt in top_products %}
+        <li><span>{{ name }}</span><b>{{ qty }} sold</b></li>
+      {% else %}<li class="muted">No sales yet.</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="panel span-3" id="low-stock">
+    <div class="section-head"><h2>Low stock (≤ {{ config.LOW_STOCK_LIMIT }})</h2><a href="{{ url_for('admin.products') }}">Manage products</a></div>
+    {% if low %}
+    <table class="table">
+      <thead><tr><th>Product</th><th>Category</th><th class="num">In stock</th><th></th></tr></thead>
+      <tbody>{% for p in low %}
+        <tr><td>{{ p.name }}</td><td>{{ p.category.category_name }}</td>
+          <td class="num {{ 'danger' if p.stock == 0 }}">{{ p.stock }}</td>
+          <td class="num"><a href="{{ url_for('admin.product_edit', product_id=p.product_id) }}">Restock</a></td></tr>
+      {% endfor %}</tbody>
+    </table>
+    {% else %}<p class="muted">All products are well stocked.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

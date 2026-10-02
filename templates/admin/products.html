@@ -1,0 +1,43 @@
+{% extends "admin/layout.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}Products{% endblock %}
+{% block admin %}
+<div class="admin-head">
+  <h1>Products</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.product_new') }}">Add product</a>
+</div>
+<form method="get" class="toolbar">
+  <label class="sr" for="pq">Search products</label>
+  <input id="pq" name="q" type="search" placeholder="Search by name" value="{{ q }}">
+  <label class="sr" for="pc">Category</label>
+  <select id="pc" name="category" data-autosubmit>
+    <option value="">All categories</option>
+    {% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if cat == c.category_id }}>{{ c.category_name }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-ghost" type="submit">Search</button>
+</form>
+<div class="panel flush">
+<table class="table">
+  <thead><tr><th></th><th>Product</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th>Visible</th><th></th></tr></thead>
+  <tbody>
+  {% for p in pagination.items %}
+    <tr class="{{ 'row-muted' if not p.is_active }}">
+      <td>{{ m.tile(p, 'tile-xs') }}</td>
+      <td><a href="{{ url_for('admin.product_edit', product_id=p.product_id) }}">{{ p.name }}</a></td>
+      <td>{{ p.category.category_name }}</td>
+      <td class="num">{{ p.price|money }}</td>
+      <td class="num {{ 'danger' if p.stock <= config.LOW_STOCK_LIMIT }}">{{ p.stock }}</td>
+      <td>{{ 'Yes' if p.is_active else 'Hidden' }}</td>
+      <td class="num actions">
+        <a href="{{ url_for('admin.product_edit', product_id=p.product_id) }}">Edit</a>
+        <form method="post" action="{{ url_for('admin.product_delete', product_id=p.product_id) }}" data-confirm="Delete {{ p.name }}? Products with past orders are hidden instead.">
+          {{ m.csrf() }}<button class="link-btn danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="muted">No products found.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{{ m.pager(pagination) }}
+{% endblock %}

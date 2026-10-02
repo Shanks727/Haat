@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('products.shop') }}">Shop</a> /
+    <a href="{{ url_for('products.shop', category=product.category_id) }}">{{ product.category.category_name }}</a> /
+    <span>{{ product.name }}</span>
+  </nav>
+
+  <div class="pd">
+    <div class="pd-media">{{ m.tile(product, 'tile-lg') }}</div>
+    <div class="pd-info">
+      <h1>{{ product.name }}</h1>
+      <a href="#reviews" class="pd-rating">{{ m.stars(product.rating_avg, product.rating_count) }}</a>
+      <p class="pd-price">{{ product.price|money }}</p>
+      <p class="muted small">Inclusive of all taxes. {{ 'Free delivery on this item.' if product.price >= config.FREE_SHIPPING_ABOVE else 'Free delivery on orders above ₹' ~ config.FREE_SHIPPING_ABOVE ~ '.' }}</p>
+
+      {% if product.stock == 0 %}
+        <p class="stock stock-out">Out of stock</p>
+      {% elif product.stock <= config.LOW_STOCK_LIMIT %}
+        <p class="stock stock-low">Only {{ product.stock }} left</p>
+      {% else %}
+        <p class="stock stock-ok">In stock</p>
+      {% endif %}
+
+      {% if product.stock > 0 %}
+      <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.product_id) }}" class="buy-box">
+        {{ m.csrf() }}
+        <div class="qty" data-qty>
+          <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
+          <label class="sr" for="quantity">Quantity</label>
+          <input id="quantity" type="number" name="quantity" value="1" min="1" max="{{ product.stock }}">
+          <button type="button" data-step="1" aria-label="Increase quantity">+</button>
+        </div>
+        <button class="btn btn-primary" type="submit">Add to cart</button>
+        <button class="btn btn-ink" type="submit" name="buy_now" value="1">Buy now</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('cart.toggle_wishlist', product_id=product.product_id) }}">
+        {{ m.csrf() }}
+        <button class="link-btn" type="submit">{{ '♥ Saved to wishlist' if product.product_id in wish_ids else '♡ Save to wishlist' }}</button>
+      </form>
+
+      <div class="pd-desc">
+        <h2>About this product</h2>
+        <p>{{ product.description or 'No description yet.' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <section id="reviews" class="reviews section">
+    <h2 class="section-title">Ratings & reviews</h2>
+    <div class="reviews-grid">
+      <div class="rating-summary">
+        <p class="rating-big">{{ product.rating_avg or '–' }}</p>
+        {{ m.stars(product.rating_avg) }}
+        <p class="muted">{{ reviews|length }} review{{ '' if reviews|length == 1 else 's' }}</p>
+        <ul class="bars">
+          {% for s, n in breakdown.items() %}
+          <li><span>{{ s }}★</span><span class="bar"><i style="width: {{ (n / reviews|length * 100) if reviews else 0 }}%"></i></span><span>{{ n }}</span></li>
+          {% endfor %}
+        </ul>
+
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('reviews.submit', product_id=product.product_id) }}" class="review-form">
+          {{ m.csrf() }}
+          <h3>{{ 'Edit your review' if my_review else 'Write a review' }}</h3>
+          <fieldset class="star-input">
+            <legend class="sr">Your rating</legend>
+            {% for s in range(5, 0, -1) %}
+              <input type="radio" id="r{{ s }}" name="rating" value="{{ s }}" {{ 'checked' if my_review and my_review.rating == s }}>
+              <label for="r{{ s }}" title="{{ s }} star{{ 's' if s > 1 }}">★</label>
+            {% endfor %}
+          </fieldset>
+          <label for="comment" class="sr">Your review</label>
+          <textarea id="comment" name="comment" rows="3" placeholder="What did you like or dislike?">{{ my_review.comment if my_review else '' }}</textarea>
+          <button class="btn btn-primary btn-sm" type="submit">{{ 'Update review' if my_review else 'Post review' }}</button>
+        </form>
+        {% else %}
+        <p><a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to write a review.</p>
+        {% endif %}
+      </div>
+
+      <div class="review-list">
+        {% for r in reviews %}
+        <article class="review">
+          <header>
+            {{ m.stars(r.rating, size='sm') }}
+            <strong>{{ r.user.name }}</strong>
+            {% if r.user_id in buyers %}<span class="tag tag-ok">Verified buyer</span>{% endif %}
+            <time datetime="{{ r.created_at.isoformat() }}">{{ r.created_at.strftime('%d %b %Y') }}</time>
+          </header>
+          {% if r.comment %}<p>{{ r.comment }}</p>{% endif %}
+          {% if current_user.is_authenticated and (r.user_id == current_user.user_id or current_user.is_admin) %}
+          <form method="post" action="{{ url_for('reviews.delete', review_id=r.review_id) }}" data-confirm="Delete this review?">
+            {{ m.csrf() }}<button class="link-btn danger small" type="submit">Delete</button>
+          </form>
+          {% endif %}
+        </article>
+        {% else %}
+        <p class="muted">No reviews yet. Bought this? Be the first to rate it.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% if related %}
+  <section class="section">
+    <h2 class="section-title">More in {{ product.category.category_name }}</h2>
+    <div class="grid">{% for p in related %}{{ m.product_card(p) }}{% endfor %}</div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
